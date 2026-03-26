@@ -4,241 +4,497 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>igvprox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/igv/dist/igv.min.js"></script>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f5f2ea;
-      --panel: rgba(255, 255, 255, 0.78);
-      --ink: #1c1917;
-      --muted: #57534e;
-      --accent: #9a3412;
-      --border: rgba(28, 25, 23, 0.12);
-      --shell-gap: 0.75rem;
-      --pad: 1rem;
-      --top-pad: 2.85rem;
+      --bg:          #0f1011;
+      --surface:     #151718;
+      --surface-2:   #1b1f20;
+      --surface-3:   #222729;
+      --border:      rgba(140, 185, 170, 0.1);
+      --border-hi:   rgba(140, 185, 170, 0.25);
+      --accent:      #8cb9ac;
+      --accent-dim:  rgba(140, 185, 170, 0.1);
+      --accent-glow: rgba(140, 185, 170, 0.25);
+      --text:        #c8d0cc;
+      --text-muted:  #5e7870;
+      --text-dim:    #2e4040;
+      --error:       #d47070;
+      --bar-h:       44px;
+      --panel-w:     360px;
+      --mono:        'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+      --sans:        'DM Sans', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     html, body {
       height: 100%;
-    }
-
-    * {
-      box-sizing: border-box;
+      overflow: hidden;
     }
 
     body {
-      margin: 0;
-      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(217, 119, 6, 0.18), transparent 30%),
-        linear-gradient(180deg, #faf7f2 0%, #efe7da 100%);
-      min-height: 100%;
+      font-family: var(--sans);
+      color: var(--text);
+      background: var(--bg);
     }
 
-    .shell {
-      width: calc(100vw - (2 * var(--shell-gap)));
-      height: calc(100vh - (2 * var(--shell-gap)));
-      margin: var(--shell-gap) auto;
-      padding: 0;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 18px 50px rgba(28, 25, 23, 0.08);
-      position: relative;
-      isolation: isolate;
-    }
+    /* ── Top bar ─────────────────────────────── */
 
-    .menu-wrap {
-      position: absolute;
-      top: 6px;
-      right: calc(var(--pad) + 2px);
-      z-index: 10000;
-      display: grid;
-      justify-items: end;
-    }
-
-    .menu-button {
-      border: 0;
-      padding: 5px 10px;
-      background: rgba(255, 247, 237, 0.92);
-      color: var(--accent);
-      cursor: pointer;
-      font: inherit;
-      font-size: 0.9rem;
-      line-height: 1.1;
-      letter-spacing: 0.01em;
-      border: 1px solid rgba(154, 52, 18, 0.22);
-      box-shadow: 0 6px 16px rgba(28, 25, 23, 0.12);
-    }
-
-    .menu-panel {
-      width: min(420px, calc(100vw - 64px));
-      margin-top: 8px;
-      padding: 16px 18px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 18px 40px rgba(28, 25, 23, 0.14);
-    }
-
-    .menu-panel[hidden] {
-      display: none;
-    }
-
-    .menu-head {
-      display: grid;
-      gap: 4px;
-      margin-bottom: 12px;
-    }
-
-    .menu-title {
-      font-weight: 700;
-    }
-
-    .menu-copy {
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 0.95rem;
-    }
-
-    .toolbar {
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--bar-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
     }
 
-    button {
-      border: 0;
-      padding: 10px 14px;
+    /* Subtle accent line along the very top edge */
+    .topbar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        var(--accent-glow) 30%,
+        var(--accent) 50%,
+        var(--accent-glow) 70%,
+        transparent 100%);
+      opacity: 0.7;
+    }
+
+    .wordmark {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      user-select: none;
+    }
+
+    .wordmark-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
       background: var(--accent);
-      color: #fff7ed;
-      cursor: pointer;
-      font: inherit;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18), 0 0 8px var(--accent-glow);
+      animation: beacon 2.8s ease-in-out infinite;
     }
 
-    button.secondary {
-      background: rgba(28, 25, 23, 0.08);
-      color: var(--ink);
+    @keyframes beacon {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(140,185,170,0.18), 0 0 6px var(--accent-glow); }
+      50%       { box-shadow: 0 0 0 2px rgba(140,185,170,0.06), 0 0 2px rgba(140,185,170,0.1); }
     }
+
+    /* ── Tracks button ───────────────────────── */
+
+    .tracks-btn {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--border-hi);
+      height: 28px;
+      padding: 0 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .tracks-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    .tracks-btn:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .track-badge {
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 0.62rem;
+      font-weight: 500;
+      padding: 1px 6px;
+      letter-spacing: 0.04em;
+      line-height: 1.5;
+    }
+
+    /* ── IGV viewport ────────────────────────── */
+
+    #igv-root {
+      position: fixed;
+      top: var(--bar-h);
+      left: 0; right: 0; bottom: 0;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    /* ── Slide-in panel ──────────────────────── */
+
+    .panel-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      pointer-events: none;
+    }
+
+    .panel-overlay.open {
+      pointer-events: auto;
+    }
+
+    .backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 8, 18, 0.6);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+
+    .panel-overlay.open .backdrop {
+      opacity: 1;
+    }
+
+    .panel {
+      position: absolute;
+      top: 0; right: 0;
+      width: var(--panel-w);
+      height: 100%;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .panel-overlay.open .panel {
+      transform: translateX(0);
+    }
+
+    /* Accent edge line on the panel's left border */
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -1px; bottom: 0;
+      width: 1px;
+      background: linear-gradient(180deg,
+        var(--accent) 0%,
+        rgba(56, 189, 248, 0.3) 40%,
+        transparent 100%);
+    }
+
+    /* ── Panel header ────────────────────────── */
+
+    .panel-hd {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .panel-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .panel-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .close-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      transition: all 0.14s;
+    }
+
+    .close-btn:hover {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--border-hi);
+    }
+
+    /* ── Panel toolbar ───────────────────────── */
+
+    .panel-toolbar {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.14s;
+    }
+
+    .btn-primary {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: var(--border-hi);
+    }
+
+    .btn-primary:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border-color: var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: rgba(56, 189, 248, 0.18);
+    }
+
+    /* ── Track list ──────────────────────────── */
 
     .track-list {
-      margin-top: 14px;
-      display: grid;
-      gap: 10px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .track-list::-webkit-scrollbar { width: 3px; }
+    .track-list::-webkit-scrollbar-track { background: transparent; }
+    .track-list::-webkit-scrollbar-thumb {
+      background: var(--surface-3);
+      border-radius: 2px;
     }
 
     .track-row {
       display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 12px;
+      grid-template-columns: 15px 1fr;
+      gap: 10px;
       align-items: start;
-      padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.75);
-      border: 1px solid rgba(28, 25, 23, 0.08);
+      padding: 9px 11px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+      margin-bottom: 2px;
     }
 
-    .track-row input {
+    .track-row:hover {
+      background: var(--surface-2);
+      border-color: var(--border);
+    }
+
+    .track-row:has(input:checked) {
+      border-color: rgba(56, 189, 248, 0.14);
+    }
+
+    /* Custom checkbox */
+    .track-row input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border: 1px solid var(--text-dim);
+      background: transparent;
+      cursor: pointer;
       margin-top: 3px;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.14s, border-color 0.14s;
     }
 
-    .track-label {
-      display: grid;
-      gap: 3px;
+    .track-row input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
     }
+
+    .track-row input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 0;
+      width: 4px;
+      height: 7px;
+      border: 1.5px solid var(--bg);
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    .track-info { min-width: 0; }
 
     .track-name {
-      font-weight: 700;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .track-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 3px;
+    }
+
+    .track-format {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 1px 5px;
+      background: var(--surface-3);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
     }
 
     .track-path {
-      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
       word-break: break-all;
-      font-size: 0.95rem;
+      line-height: 1.45;
     }
 
-    #igv-root {
-      width: calc(100% - (2 * var(--pad)));
-      height: calc(100% - var(--top-pad) - var(--pad));
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #fff;
-      margin: var(--top-pad) var(--pad) var(--pad);
+    /* ── Panel footer / status ───────────────── */
+
+    .panel-ft {
+      padding: 11px 18px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .status {
-      margin-top: 12px;
-      font-size: 0.95rem;
-      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      line-height: 1.5;
     }
 
-    .error {
-      color: #991b1b;
-    }
+    .status.error { color: var(--error); }
 
-    @media (max-width: 720px) {
-      :root {
-        --shell-gap: 0.5rem;
-      }
+    /* ── Responsive ──────────────────────────── */
 
-      .menu-wrap {
-        top: 6px;
-        right: calc(0.75rem + 2px);
-      }
-
-      .menu-panel {
-        width: min(420px, calc(100vw - 40px));
-      }
-
-      #igv-root {
-        width: calc(100% - 1.5rem);
-        height: calc(100% - 2.7rem - 0.75rem);
-        margin: 2.7rem 0.75rem 0.75rem;
-      }
+    @media (max-width: 480px) {
+      :root { --panel-w: 100vw; }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="menu-wrap">
-      <button id="menu-button" class="menu-button" type="button" aria-expanded="false" aria-controls="menu-panel">igvprox</button>
-      <section id="menu-panel" class="menu-panel" hidden>
-        <div class="menu-head">
-          <div class="menu-title">Track Selection</div>
-          <div id="menu-copy" class="menu-copy">Enable or disable discovered tracks for the current session.</div>
-        </div>
-        <div class="toolbar">
-          <button id="enable-all" type="button">Enable All</button>
-          <button id="disable-all" class="secondary" type="button">Disable All</button>
-        </div>
-        <div id="track-list" class="track-list"></div>
-        <div id="status" class="status">Loading session metadata...</div>
-      </section>
-    </section>
 
-    <section id="igv-root"></section>
-  </main>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="wordmark">
+      <div class="wordmark-dot"></div>
+      igvprox
+    </div>
+    <button id="menu-button" class="tracks-btn" type="button"
+            aria-expanded="false" aria-controls="panel">
+      <span>Tracks</span>
+      <span class="track-badge" id="track-count">—</span>
+    </button>
+  </header>
+
+  <!-- IGV browser fills everything below the bar -->
+  <div id="igv-root"></div>
+
+  <!-- Slide-in track panel -->
+  <div id="panel-overlay" class="panel-overlay" aria-hidden="true">
+    <div class="backdrop" id="backdrop"></div>
+    <aside id="panel" class="panel" role="dialog" aria-label="Track Selection">
+
+      <div class="panel-hd">
+        <div>
+          <div class="panel-eyebrow">Track Selection</div>
+          <div id="menu-copy" class="panel-subtitle">Loading session&hellip;</div>
+        </div>
+        <button class="close-btn" id="close-btn" aria-label="Close panel">&#x2715;</button>
+      </div>
+
+      <div class="panel-toolbar">
+        <button id="enable-all"  class="btn btn-primary" type="button">Enable All</button>
+        <button id="disable-all" class="btn btn-ghost"   type="button">Disable All</button>
+      </div>
+
+      <div id="track-list" class="track-list"></div>
+
+      <div class="panel-ft">
+        <div id="status" class="status">Loading session metadata&hellip;</div>
+      </div>
+
+    </aside>
+  </div>
 
   <script>
     let browser;
     let sessionData;
     const loadedTracks = new Map();
-    const menuButton = document.getElementById("menu-button");
-    const menuPanel = document.getElementById("menu-panel");
-    const menuCopy = document.getElementById("menu-copy");
+    const menuButton   = document.getElementById("menu-button");
+    const menuCopy     = document.getElementById("menu-copy");
+    const panelOverlay = document.getElementById("panel-overlay");
+    const backdrop     = document.getElementById("backdrop");
 
-    function trackKey(track) {
-      return track.id;
-    }
+    function trackKey(track) { return track.id; }
 
     function selectedTracks() {
       return sessionData.tracks.filter((track) => {
-        const checkbox = document.querySelector(`input[data-track-id="${track.id}"]`);
-        return checkbox && checkbox.checked;
+        const cb = document.querySelector(`input[data-track-id="${track.id}"]`);
+        return cb && cb.checked;
       });
     }
 
     function renderTrackList(session) {
+      document.getElementById("track-count").textContent = session.tracks.length;
       const list = document.getElementById("track-list");
       list.replaceChildren(...session.tracks.map((track) => {
         const row = document.createElement("label");
@@ -250,106 +506,93 @@
         checkbox.dataset.trackId = track.id;
         checkbox.addEventListener("change", syncTracks);
 
-        const label = document.createElement("div");
-        label.className = "track-label";
+        const info = document.createElement("div");
+        info.className = "track-info";
 
         const name = document.createElement("div");
         name.className = "track-name";
-        name.textContent = `${track.name} (${track.format})`;
+        name.textContent = track.name;
+
+        const meta = document.createElement("div");
+        meta.className = "track-meta";
+        const fmt = document.createElement("span");
+        fmt.className = "track-format";
+        fmt.textContent = track.format;
+        meta.append(fmt);
 
         const path = document.createElement("div");
         path.className = "track-path";
         path.textContent = track.path || track.url;
 
-        label.append(name, path);
-        row.append(checkbox, label);
+        info.append(name, meta, path);
+        row.append(checkbox, info);
         return row;
       }));
     }
 
     async function createBrowser(session) {
-      const options = {
-        genome: session.genome,
-        locus: "all",
-        tracks: selectedTracks()
-      };
-      browser = await igv.createBrowser(document.getElementById("igv-root"), options);
+      browser = await igv.createBrowser(
+        document.getElementById("igv-root"),
+        { genome: session.genome, locus: "all", tracks: selectedTracks() }
+      );
       loadedTracks.clear();
-      for (const trackView of browser.trackViews) {
-        if (trackView.track.config && trackView.track.config.id) {
-          loadedTracks.set(trackView.track.config.id, trackView.track);
+      for (const tv of browser.trackViews) {
+        if (tv.track.config && tv.track.config.id) {
+          loadedTracks.set(tv.track.config.id, tv.track);
         }
       }
     }
 
     async function syncTracks() {
-      if (!browser || !sessionData) {
-        return;
-      }
-
+      if (!browser || !sessionData) return;
       const status = document.getElementById("status");
-      const wanted = new Map(selectedTracks().map((track) => [trackKey(track), track]));
+      const wanted = new Map(selectedTracks().map((t) => [trackKey(t), t]));
 
-      for (const [id, loadedTrack] of [...loadedTracks.entries()]) {
-        if (wanted.has(id)) {
-          continue;
-        }
-        browser.removeTrack(loadedTrack);
-        loadedTracks.delete(id);
+      for (const [id, t] of [...loadedTracks.entries()]) {
+        if (!wanted.has(id)) { browser.removeTrack(t); loadedTracks.delete(id); }
       }
-
-      for (const [id, track] of wanted.entries()) {
-        if (loadedTracks.has(id)) {
-          continue;
+      for (const [id, t] of wanted.entries()) {
+        if (!loadedTracks.has(id)) {
+          loadedTracks.set(id, await browser.loadTrack(t));
         }
-        const loadedTrack = await browser.loadTrack(track);
-        loadedTracks.set(id, loadedTrack);
       }
-
-      status.textContent = "Enabled " + loadedTracks.size + " of " + sessionData.tracks.length + " track(s).";
+      status.textContent = `Enabled ${loadedTracks.size} of ${sessionData.tracks.length} track(s).`;
       status.classList.remove("error");
     }
 
     function setAllTracks(enabled) {
-      document.querySelectorAll("#track-list input[type=checkbox]").forEach((checkbox) => {
-        checkbox.checked = enabled;
-      });
+      document.querySelectorAll("#track-list input[type=checkbox]")
+        .forEach((cb) => { cb.checked = enabled; });
       syncTracks();
     }
 
     function setMenuOpen(open) {
-      menuPanel.hidden = !open;
+      panelOverlay.classList.toggle("open", open);
+      panelOverlay.setAttribute("aria-hidden", String(!open));
       menuButton.setAttribute("aria-expanded", String(open));
     }
 
     async function boot() {
       const status = document.getElementById("status");
       try {
-        menuCopy.textContent = "Enable or disable discovered tracks for the current session at " + window.location.origin + ".";
-        const response = await fetch("/api/session");
-        if (!response.ok) {
-          throw new Error("session request failed: " + response.status);
-        }
-        sessionData = await response.json();
-        renderTrackList(sessionData);
-        document.getElementById("enable-all").addEventListener("click", () => setAllTracks(true));
-        document.getElementById("disable-all").addEventListener("click", () => setAllTracks(false));
-        menuButton.addEventListener("click", () => setMenuOpen(menuPanel.hidden));
-        document.addEventListener("click", (event) => {
-          if (menuPanel.hidden) {
-            return;
-          }
-          if (menuPanel.contains(event.target) || menuButton.contains(event.target)) {
-            return;
-          }
-          setMenuOpen(false);
-        });
+        menuCopy.textContent = `Session at ${window.location.origin}`;
+        const res = await fetch("/api/session");
+        if (!res.ok) throw new Error("session request failed: " + res.status);
+        sessionData = await res.json();
 
-        status.textContent = "Launching IGV with " + sessionData.tracks.length + " track(s) on genome " + sessionData.genome + ".";
+        renderTrackList(sessionData);
+        document.getElementById("enable-all") .addEventListener("click", () => setAllTracks(true));
+        document.getElementById("disable-all").addEventListener("click", () => setAllTracks(false));
+        document.getElementById("close-btn")  .addEventListener("click", () => setMenuOpen(false));
+        backdrop.addEventListener("click", () => setMenuOpen(false));
+        menuButton.addEventListener("click", () =>
+          setMenuOpen(!panelOverlay.classList.contains("open")));
+
+        status.textContent = `Launched · ${sessionData.tracks.length} track(s) · ${sessionData.genome}`;
         await createBrowser(sessionData);
         await syncTracks();
-      } catch (error) {
-        status.textContent = error.message;
+      } catch (err) {
+        status.textContent = err.message;
         status.classList.add("error");
       }
     }
