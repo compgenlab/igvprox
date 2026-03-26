@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/compgenlab/igvprox/internal/config"
 	"github.com/compgenlab/igvprox/internal/discovery"
 )
 
@@ -16,16 +17,18 @@ import (
 var staticFS embed.FS
 
 type Options struct {
-	Genome     string
-	BrowserURL string
-	Files      []discovery.File
-	Verbose    bool
+	Genome         string
+	BrowserURL     string
+	Files          []discovery.File
+	ConstantTracks []config.Track
+	Verbose        bool
 }
 
 type Server struct {
-	genome string
-	files  []discovery.File
-	byID   map[string]discovery.File
+	genome         string
+	files          []discovery.File
+	constantTracks []config.Track
+	byID           map[string]discovery.File
 }
 
 type sessionResponse struct {
@@ -34,12 +37,15 @@ type sessionResponse struct {
 }
 
 type sessionTrack struct {
-	Name     string `json:"name"`
-	Path     string `json:"path"`
-	Format   string `json:"format"`
-	Type     string `json:"type,omitempty"`
-	URL      string `json:"url"`
-	IndexURL string `json:"indexURL,omitempty"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Path           string `json:"path,omitempty"`
+	Format         string `json:"format"`
+	Type           string `json:"type,omitempty"`
+	URL            string `json:"url"`
+	IndexURL       string `json:"indexURL,omitempty"`
+	DefaultEnabled bool   `json:"defaultEnabled"`
+	Source         string `json:"source"`
 }
 
 func New(opts Options) *Server {
@@ -48,9 +54,10 @@ func New(opts Options) *Server {
 		byID[file.ID] = file
 	}
 	return &Server{
-		genome: opts.Genome,
-		files:  opts.Files,
-		byID:   byID,
+		genome:         opts.Genome,
+		files:          opts.Files,
+		constantTracks: opts.ConstantTracks,
+		byID:           byID,
 	}
 }
 
@@ -83,20 +90,38 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	}
 	resp := sessionResponse{
 		Genome: s.genome,
-		Tracks: make([]sessionTrack, 0, len(s.files)),
+		Tracks: make([]sessionTrack, 0, len(s.files)+len(s.constantTracks)),
 	}
 	for _, file := range s.files {
 		track := sessionTrack{
-			Name:   file.Name,
-			Path:   file.Path,
-			Format: file.Format,
-			Type:   file.TrackType,
-			URL:    fmt.Sprintf("/files/%s/data", file.ID),
+			ID:             file.ID,
+			Name:           file.Name,
+			Path:           file.Path,
+			Format:         file.Format,
+			Type:           file.TrackType,
+			URL:            fmt.Sprintf("/files/%s/data", file.ID),
+			DefaultEnabled: true,
+			Source:         "session",
 		}
 		if file.IndexPath != "" {
 			track.IndexURL = fmt.Sprintf("/files/%s/index", file.ID)
 		}
 		resp.Tracks = append(resp.Tracks, track)
+	}
+	for _, track := range s.constantTracks {
+		if track.Genome != "" && track.Genome != s.genome {
+			continue
+		}
+		resp.Tracks = append(resp.Tracks, sessionTrack{
+			ID:             config.TrackID(track),
+			Name:           track.Name,
+			Format:         track.Format,
+			Type:           track.Type,
+			URL:            track.URL,
+			IndexURL:       track.IndexURL,
+			DefaultEnabled: track.Enabled,
+			Source:         "config",
+		})
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)

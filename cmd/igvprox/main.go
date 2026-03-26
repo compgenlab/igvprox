@@ -28,17 +28,35 @@ func main() {
 }
 
 func run() error {
+	defaultSocketHelp, err := config.ResolveSocketPath("")
+	if err != nil {
+		return err
+	}
+	defaultBrowserURL := "http://localhost:5000"
+
 	cfgPath := flag.String("config", "", "config file path")
 	genome := flag.String("genome", "", "reference genome id")
 	flag.StringVar(genome, "g", "", "reference genome id")
 	recursive := flag.Bool("recursive", false, "recursively discover supported files in directory arguments")
 	flag.BoolVar(recursive, "R", false, "recursively discover supported files in directory arguments")
-	socketPath := flag.String("socket", "", "unix socket path")
-	flag.StringVar(socketPath, "s", "", "unix socket path")
-	browserURL := flag.String("open-browser-url", "", "local browser URL hint to print")
+	socketHelp := fmt.Sprintf("unix socket path (default %q, or $XDG_RUNTIME_DIR/igvprox.sock when XDG_RUNTIME_DIR is set)", defaultSocketHelp)
+	socketPath := flag.String("socket", "", socketHelp)
+	flag.StringVar(socketPath, "s", "", socketHelp)
+	browserURL := flag.String("open-browser-url", "", fmt.Sprintf("local browser URL hint to print (default %q)", defaultBrowserURL))
 	allowMissingIndex := flag.Bool("allow-missing-index", false, "allow indexed formats without a discovered index")
 	verbose := flag.Bool("verbose", false, "enable verbose logging")
 	flag.BoolVar(verbose, "v", false, "enable verbose logging")
+	flag.Usage = func() {
+		out := flag.CommandLine.Output()
+		fmt.Fprintf(out, "Usage: %s [flags] <path> [<path> ...]\n\n", os.Args[0])
+		fmt.Fprintln(out, "Serve discovered genomics files over a UNIX-socket HTTP proxy for local viewing in igv.js.")
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, "Default SSH forwarding:")
+		fmt.Fprintf(out, "  ssh -L 5000:%s user@cluster\n", defaultSocketHelp)
+		fmt.Fprintf(out, "  then open %s\n\n", defaultBrowserURL)
+		fmt.Fprintln(out, "Flags:")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -51,7 +69,7 @@ func run() error {
 	}
 
 	effectiveGenome := firstNonEmpty(*genome, cfg.Genome, "hg38")
-	effectiveBrowserURL := firstNonEmpty(*browserURL, cfg.BrowserURL, "http://localhost:8080")
+	effectiveBrowserURL := firstNonEmpty(*browserURL, cfg.BrowserURL, defaultBrowserURL)
 	effectiveSocketPath, err := config.ResolveSocketPath(firstNonEmpty(*socketPath, cfg.SocketPath, ""))
 	if err != nil {
 		return err
@@ -102,10 +120,11 @@ func run() error {
 	}
 
 	app := igvserver.New(igvserver.Options{
-		Genome:     effectiveGenome,
-		BrowserURL: effectiveBrowserURL,
-		Files:      files,
-		Verbose:    *verbose,
+		Genome:         effectiveGenome,
+		BrowserURL:     effectiveBrowserURL,
+		Files:          files,
+		ConstantTracks: cfg.ConstantTracks,
+		Verbose:        *verbose,
 	})
 
 	srv := &http.Server{
@@ -114,10 +133,13 @@ func run() error {
 	}
 
 	log.Printf("serving %d tracks", len(files))
+	if cfg.Path != "" {
+		log.Printf("config: %s", cfg.Path)
+	}
 	log.Printf("remote socket: %s", effectiveSocketPath)
 	log.Printf("local browser URL: %s", effectiveBrowserURL)
 	log.Printf("example ssh tunnel:")
-	log.Printf("  ssh -L 8080:%s user@cluster", effectiveSocketPath)
+	log.Printf("  ssh -L 5000:%s user@cluster", effectiveSocketPath)
 
 	errCh := make(chan error, 1)
 	go func() {

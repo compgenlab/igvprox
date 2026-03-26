@@ -109,13 +109,13 @@ By default the server listens on:
 From your local machine, forward a local port to the remote UNIX socket:
 
 ```sh
-ssh -L 8080:/tmp/igvprox-$(id -u).sock user@cluster
+ssh -L 5000:/tmp/igvprox-$(id -u).sock user@cluster
 ```
 
 Then open:
 
 ```text
-http://localhost:8080
+http://localhost:5000
 ```
 
 If the socket path is different, forward that path instead.
@@ -139,7 +139,7 @@ Flags:
 Defaults:
 
 - genome: `hg38`
-- browser URL hint: `http://localhost:8080`
+- browser URL hint: `http://localhost:5000`
 - recursion: off
 - sorting: ascending full path
 
@@ -155,7 +155,7 @@ Supported config keys:
 
 ```toml
 genome = "hg38"
-browser_url = "http://localhost:8080"
+browser_url = "http://localhost:5000"
 socket_path = ""
 allow_missing_index = false
 ```

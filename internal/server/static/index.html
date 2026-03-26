@@ -14,6 +14,13 @@
       --muted: #57534e;
       --accent: #9a3412;
       --border: rgba(28, 25, 23, 0.12);
+      --shell-gap: 0.75rem;
+      --pad: 1rem;
+      --top-pad: 2.85rem;
+    }
+
+    html, body {
+      height: 100%;
     }
 
     * {
@@ -27,63 +34,136 @@
       background:
         radial-gradient(circle at top left, rgba(217, 119, 6, 0.18), transparent 30%),
         linear-gradient(180deg, #faf7f2 0%, #efe7da 100%);
-      min-height: 100vh;
+      min-height: 100%;
     }
 
     .shell {
-      width: min(1180px, calc(100vw - 32px));
-      margin: 24px auto;
-      padding: 24px;
+      width: calc(100vw - (2 * var(--shell-gap)));
+      height: calc(100vh - (2 * var(--shell-gap)));
+      margin: var(--shell-gap) auto;
+      padding: 0;
       border: 1px solid var(--border);
-      border-radius: 20px;
       background: var(--panel);
       backdrop-filter: blur(14px);
       box-shadow: 0 18px 50px rgba(28, 25, 23, 0.08);
+      position: relative;
+      isolation: isolate;
     }
 
-    h1 {
-      margin: 0;
-      font-size: clamp(2rem, 4vw, 3.4rem);
-      font-weight: 600;
-      letter-spacing: -0.04em;
-    }
-
-    p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .hero {
+    .menu-wrap {
+      position: absolute;
+      top: 6px;
+      right: calc(var(--pad) + 2px);
+      z-index: 10000;
       display: grid;
-      gap: 12px;
-      margin-bottom: 18px;
+      justify-items: end;
     }
 
-    .tracks {
-      margin: 18px 0 22px;
+    .menu-button {
+      border: 0;
+      padding: 5px 10px;
+      background: rgba(255, 247, 237, 0.92);
+      color: var(--accent);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.9rem;
+      line-height: 1.1;
+      letter-spacing: 0.01em;
+      border: 1px solid rgba(154, 52, 18, 0.22);
+      box-shadow: 0 6px 16px rgba(28, 25, 23, 0.12);
+    }
+
+    .menu-panel {
+      width: min(420px, calc(100vw - 64px));
+      margin-top: 8px;
       padding: 16px 18px;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.66);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 40px rgba(28, 25, 23, 0.14);
     }
 
-    .tracks ul {
-      margin: 12px 0 0;
-      padding-left: 18px;
+    .menu-panel[hidden] {
+      display: none;
     }
 
-    .tracks li {
-      margin: 6px 0;
+    .menu-head {
+      display: grid;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .menu-title {
+      font-weight: 700;
+    }
+
+    .menu-copy {
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #fff7ed;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button.secondary {
+      background: rgba(28, 25, 23, 0.08);
+      color: var(--ink);
+    }
+
+    .track-list {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .track-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(28, 25, 23, 0.08);
+    }
+
+    .track-row input {
+      margin-top: 3px;
+    }
+
+    .track-label {
+      display: grid;
+      gap: 3px;
+    }
+
+    .track-name {
+      font-weight: 700;
+    }
+
+    .track-path {
+      color: var(--muted);
       word-break: break-all;
+      font-size: 0.95rem;
     }
 
     #igv-root {
-      min-height: 720px;
-      border-radius: 16px;
+      width: calc(100% - (2 * var(--pad)));
+      height: calc(100% - var(--top-pad) - var(--pad));
       overflow: hidden;
       border: 1px solid var(--border);
       background: #fff;
+      margin: var(--top-pad) var(--pad) var(--pad);
     }
 
     .status {
@@ -95,47 +175,179 @@
     .error {
       color: #991b1b;
     }
+
+    @media (max-width: 720px) {
+      :root {
+        --shell-gap: 0.5rem;
+      }
+
+      .menu-wrap {
+        top: 6px;
+        right: calc(0.75rem + 2px);
+      }
+
+      .menu-panel {
+        width: min(420px, calc(100vw - 40px));
+      }
+
+      #igv-root {
+        width: calc(100% - 1.5rem);
+        height: calc(100% - 2.7rem - 0.75rem);
+        margin: 2.7rem 0.75rem 0.75rem;
+      }
+    }
   </style>
 </head>
 <body>
   <main class="shell">
-    <section class="hero">
-      <h1>igvprox</h1>
-      <p>Remote genomics tracks served from an HPC cluster over an SSH-forwarded local port.</p>
-    </section>
-
-    <section class="tracks">
-      <strong>Discovered tracks</strong>
-      <ul id="track-list"></ul>
-      <div id="status" class="status">Loading session metadata...</div>
+    <section class="menu-wrap">
+      <button id="menu-button" class="menu-button" type="button" aria-expanded="false" aria-controls="menu-panel">igvprox</button>
+      <section id="menu-panel" class="menu-panel" hidden>
+        <div class="menu-head">
+          <div class="menu-title">Track Selection</div>
+          <div id="menu-copy" class="menu-copy">Enable or disable discovered tracks for the current session.</div>
+        </div>
+        <div class="toolbar">
+          <button id="enable-all" type="button">Enable All</button>
+          <button id="disable-all" class="secondary" type="button">Disable All</button>
+        </div>
+        <div id="track-list" class="track-list"></div>
+        <div id="status" class="status">Loading session metadata...</div>
+      </section>
     </section>
 
     <section id="igv-root"></section>
   </main>
 
   <script>
+    let browser;
+    let sessionData;
+    const loadedTracks = new Map();
+    const menuButton = document.getElementById("menu-button");
+    const menuPanel = document.getElementById("menu-panel");
+    const menuCopy = document.getElementById("menu-copy");
+
+    function trackKey(track) {
+      return track.id;
+    }
+
+    function selectedTracks() {
+      return sessionData.tracks.filter((track) => {
+        const checkbox = document.querySelector(`input[data-track-id="${track.id}"]`);
+        return checkbox && checkbox.checked;
+      });
+    }
+
+    function renderTrackList(session) {
+      const list = document.getElementById("track-list");
+      list.replaceChildren(...session.tracks.map((track) => {
+        const row = document.createElement("label");
+        row.className = "track-row";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !!track.defaultEnabled;
+        checkbox.dataset.trackId = track.id;
+        checkbox.addEventListener("change", syncTracks);
+
+        const label = document.createElement("div");
+        label.className = "track-label";
+
+        const name = document.createElement("div");
+        name.className = "track-name";
+        name.textContent = `${track.name} (${track.format})`;
+
+        const path = document.createElement("div");
+        path.className = "track-path";
+        path.textContent = track.path || track.url;
+
+        label.append(name, path);
+        row.append(checkbox, label);
+        return row;
+      }));
+    }
+
+    async function createBrowser(session) {
+      const options = {
+        genome: session.genome,
+        locus: "all",
+        tracks: selectedTracks()
+      };
+      browser = await igv.createBrowser(document.getElementById("igv-root"), options);
+      loadedTracks.clear();
+      for (const trackView of browser.trackViews) {
+        if (trackView.track.config && trackView.track.config.id) {
+          loadedTracks.set(trackView.track.config.id, trackView.track);
+        }
+      }
+    }
+
+    async function syncTracks() {
+      if (!browser || !sessionData) {
+        return;
+      }
+
+      const status = document.getElementById("status");
+      const wanted = new Map(selectedTracks().map((track) => [trackKey(track), track]));
+
+      for (const [id, loadedTrack] of [...loadedTracks.entries()]) {
+        if (wanted.has(id)) {
+          continue;
+        }
+        browser.removeTrack(loadedTrack);
+        loadedTracks.delete(id);
+      }
+
+      for (const [id, track] of wanted.entries()) {
+        if (loadedTracks.has(id)) {
+          continue;
+        }
+        const loadedTrack = await browser.loadTrack(track);
+        loadedTracks.set(id, loadedTrack);
+      }
+
+      status.textContent = "Enabled " + loadedTracks.size + " of " + sessionData.tracks.length + " track(s).";
+      status.classList.remove("error");
+    }
+
+    function setAllTracks(enabled) {
+      document.querySelectorAll("#track-list input[type=checkbox]").forEach((checkbox) => {
+        checkbox.checked = enabled;
+      });
+      syncTracks();
+    }
+
+    function setMenuOpen(open) {
+      menuPanel.hidden = !open;
+      menuButton.setAttribute("aria-expanded", String(open));
+    }
+
     async function boot() {
       const status = document.getElementById("status");
-      const list = document.getElementById("track-list");
       try {
+        menuCopy.textContent = "Enable or disable discovered tracks for the current session at " + window.location.origin + ".";
         const response = await fetch("/api/session");
         if (!response.ok) {
           throw new Error("session request failed: " + response.status);
         }
-        const session = await response.json();
-        list.replaceChildren(...session.tracks.map((track) => {
-          const li = document.createElement("li");
-          li.textContent = track.path;
-          return li;
-        }));
+        sessionData = await response.json();
+        renderTrackList(sessionData);
+        document.getElementById("enable-all").addEventListener("click", () => setAllTracks(true));
+        document.getElementById("disable-all").addEventListener("click", () => setAllTracks(false));
+        menuButton.addEventListener("click", () => setMenuOpen(menuPanel.hidden));
+        document.addEventListener("click", (event) => {
+          if (menuPanel.hidden) {
+            return;
+          }
+          if (menuPanel.contains(event.target) || menuButton.contains(event.target)) {
+            return;
+          }
+          setMenuOpen(false);
+        });
 
-        status.textContent = "Launching IGV with " + session.tracks.length + " track(s) on genome " + session.genome + ".";
-        const options = {
-          genome: session.genome,
-          locus: "all",
-          tracks: session.tracks
-        };
-        await igv.createBrowser(document.getElementById("igv-root"), options);
+        status.textContent = "Launching IGV with " + sessionData.tracks.length + " track(s) on genome " + sessionData.genome + ".";
+        await createBrowser(sessionData);
+        await syncTracks();
       } catch (error) {
         status.textContent = error.message;
         status.classList.add("error");
