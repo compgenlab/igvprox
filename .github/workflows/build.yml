@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
@@ -30,3 +32,30 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: make build
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build all platforms
+        run: |
+          mkdir -p bin
+          GOOS=linux  GOARCH=amd64 CGO_ENABLED=0 go build -o bin/igvprox-linux-amd64  ./cmd/igvprox
+          GOOS=linux  GOARCH=arm64 CGO_ENABLED=0 go build -o bin/igvprox-linux-arm64  ./cmd/igvprox
+          GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o bin/igvprox-darwin-amd64 ./cmd/igvprox
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o bin/igvprox-darwin-arm64 ./cmd/igvprox
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/igvprox-*
