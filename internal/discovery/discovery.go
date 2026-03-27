@@ -170,10 +170,15 @@ func indexedFile(path, format, trackType string, candidates []string, opts Optio
 	return File{}, "skipping indexed file without index: " + path, false, nil
 }
 
-func plainFile(path, format, trackType string) File {
+// FileID returns the stable identifier for a file at the given absolute path.
+func FileID(path string) string {
 	sum := sha1.Sum([]byte(path))
+	return hex.EncodeToString(sum[:])
+}
+
+func plainFile(path, format, trackType string) File {
 	return File{
-		ID:        hex.EncodeToString(sum[:]),
+		ID:        FileID(path),
 		Name:      filepath.Base(path),
 		Path:      path,
 		Format:    format,

@@ -24,7 +24,7 @@
       --text-dim:    #2e4040;
       --error:       #d47070;
       --bar-h:       44px;
-      --panel-w:     360px;
+      --panel-w:     480px;
       --mono:        'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
       --sans:        'DM Sans', system-ui, sans-serif;
     }
@@ -188,11 +188,11 @@
       flex-direction: column;
       transform: translateX(100%);
       transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
     }
 
     .panel-overlay.open .panel {
       transform: translateX(0);
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
     }
 
     /* Accent edge line on the panel's left border */
@@ -232,6 +232,7 @@
       font-size: 0.8rem;
       color: var(--text-muted);
       line-height: 1.45;
+      word-break: break-all;
     }
 
     .close-btn {
@@ -406,6 +407,128 @@
       line-height: 1.45;
     }
 
+    /* ── File browser ────────────────────────── */
+
+    .browser-view {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .browser-path-bar {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      word-break: break-all;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      line-height: 1.5;
+    }
+
+    .browser-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .browser-list::-webkit-scrollbar { width: 3px; }
+    .browser-list::-webkit-scrollbar-track { background: transparent; }
+    .browser-list::-webkit-scrollbar-thumb {
+      background: var(--surface-3);
+      border-radius: 2px;
+    }
+
+    .browser-entry {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border: 1px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+      margin-bottom: 2px;
+    }
+
+    .browser-entry:hover {
+      background: var(--surface-2);
+      border-color: var(--border);
+    }
+
+    .browser-entry-icon {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      width: 16px;
+    }
+
+    .browser-entry-name {
+      font-size: 0.8rem;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .browser-entry-name.is-dir {
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .browser-entry-name.is-parent {
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .add-file-btn {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      cursor: pointer;
+      border: 1px solid var(--border-hi);
+      background: var(--accent-dim);
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: all 0.14s;
+    }
+
+    .add-file-btn:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    .add-file-btn.added {
+      background: transparent;
+      color: var(--text-muted);
+      border-color: var(--border);
+      cursor: default;
+    }
+
+    .remove-file-btn {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      cursor: pointer;
+      border: 1px solid rgba(212, 112, 112, 0.3);
+      background: rgba(212, 112, 112, 0.07);
+      color: var(--error);
+      flex-shrink: 0;
+      transition: all 0.14s;
+    }
+
+    .remove-file-btn:hover {
+      background: rgba(212, 112, 112, 0.18);
+      border-color: rgba(212, 112, 112, 0.5);
+    }
+
     /* ── Panel footer / status ───────────────── */
 
     .panel-ft {
@@ -425,7 +548,7 @@
 
     /* ── Responsive ──────────────────────────── */
 
-    @media (max-width: 480px) {
+    @media (max-width: 520px) {
       :root { --panel-w: 100vw; }
     }
   </style>
@@ -434,15 +557,18 @@
 
   <!-- Top bar -->
   <header class="topbar">
-    <div class="wordmark">
-      <div class="wordmark-dot"></div>
-      igvprox
+    <div></div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="wordmark">
+        <div class="wordmark-dot"></div>
+        igvprox
+      </div>
+      <button id="menu-button" class="tracks-btn" type="button"
+              aria-expanded="false" aria-controls="panel">
+        <span>Tracks</span>
+        <span class="track-badge" id="track-count">—</span>
+      </button>
     </div>
-    <button id="menu-button" class="tracks-btn" type="button"
-            aria-expanded="false" aria-controls="panel">
-      <span>Tracks</span>
-      <span class="track-badge" id="track-count">—</span>
-    </button>
   </header>
 
   <!-- IGV browser fills everything below the bar -->
@@ -464,9 +590,17 @@
       <div class="panel-toolbar">
         <button id="enable-all"  class="btn btn-primary" type="button">Enable All</button>
         <button id="disable-all" class="btn btn-ghost"   type="button">Disable All</button>
+        <button id="browse-btn"  class="btn btn-ghost"   type="button">Browse</button>
       </div>
 
       <div id="track-list" class="track-list"></div>
+
+      <div id="browser-view" class="browser-view">
+        <div class="browser-path-bar">
+          <span id="browser-path-text"></span>
+        </div>
+        <div id="browser-entries" class="browser-list"></div>
+      </div>
 
       <div class="panel-ft">
         <div id="status" class="status">Loading session metadata&hellip;</div>
@@ -478,6 +612,8 @@
   <script>
     let browser;
     let sessionData;
+    let browseCurrentPath = null;
+    let lastBrowseData    = null;
     const loadedTracks = new Map();
     const menuButton   = document.getElementById("menu-button");
     const menuCopy     = document.getElementById("menu-copy");
@@ -493,7 +629,22 @@
       });
     }
 
+    // Insert a new track just before the first config track (i.e. below CWD tracks, above RefSeq etc.)
+    function insertTrackInOrder(track) {
+      let insertIdx = 0;
+      for (let i = 0; i < sessionData.tracks.length; i++) {
+        if (sessionData.tracks[i].source !== "config") insertIdx = i + 1;
+      }
+      sessionData.tracks.splice(insertIdx, 0, track);
+    }
+
     function renderTrackList(session) {
+      // Preserve existing checkbox state across re-renders
+      const state = {};
+      document.querySelectorAll('#track-list input[type="checkbox"]').forEach(cb => {
+        state[cb.dataset.trackId] = cb.checked;
+      });
+
       document.getElementById("track-count").textContent = session.tracks.length;
       const list = document.getElementById("track-list");
       list.replaceChildren(...session.tracks.map((track) => {
@@ -502,7 +653,7 @@
 
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
-        checkbox.checked = !!track.defaultEnabled;
+        checkbox.checked = state[track.id] !== undefined ? state[track.id] : !!track.defaultEnabled;
         checkbox.dataset.trackId = track.id;
         checkbox.addEventListener("change", syncTracks);
 
@@ -572,13 +723,151 @@
       menuButton.setAttribute("aria-expanded", String(open));
     }
 
+    function setPanelView(view) {
+      const trackList    = document.getElementById("track-list");
+      const browserView  = document.getElementById("browser-view");
+      const enableAll    = document.getElementById("enable-all");
+      const disableAll   = document.getElementById("disable-all");
+      const browseBtn    = document.getElementById("browse-btn");
+
+      if (view === "browser") {
+        trackList.style.display   = "none";
+        browserView.style.display = "flex";
+        enableAll.style.display   = "none";
+        disableAll.style.display  = "none";
+        browseBtn.textContent     = "← Tracks";
+        if (browseCurrentPath === null) {
+          navigateBrowser(sessionData.cwd);
+        }
+      } else {
+        trackList.style.display   = "";
+        browserView.style.display = "none";
+        enableAll.style.display   = "";
+        disableAll.style.display  = "";
+        browseBtn.textContent     = "Browse";
+      }
+    }
+
+    async function navigateBrowser(path) {
+      try {
+        const res = await fetch("/api/browse?path=" + encodeURIComponent(path));
+        if (!res.ok) throw new Error("browse failed: " + res.status);
+        const data = await res.json();
+        browseCurrentPath = data.path;
+        renderBrowserEntries(data);
+      } catch (err) {
+        document.getElementById("status").textContent = err.message;
+        document.getElementById("status").classList.add("error");
+      }
+    }
+
+    function renderBrowserEntries(data) {
+      lastBrowseData = data;
+      document.getElementById("browser-path-text").textContent = data.path;
+      const trackIDs  = new Set(sessionData ? sessionData.tracks.map(t => t.id) : []);
+      const container = document.getElementById("browser-entries");
+      container.replaceChildren(...(data.entries || []).map((entry) => {
+        const row = document.createElement("div");
+        row.className = "browser-entry";
+
+        const icon = document.createElement("span");
+        icon.className = "browser-entry-icon";
+
+        const nameEl = document.createElement("span");
+        nameEl.className = "browser-entry-name";
+
+        if (entry.isDir) {
+          if (entry.name === "..") {
+            icon.textContent = "↑";
+            nameEl.textContent = "..";
+            nameEl.classList.add("is-parent");
+          } else {
+            icon.textContent = "▸";
+            nameEl.textContent = entry.name;
+            nameEl.classList.add("is-dir");
+          }
+          row.addEventListener("click", () => navigateBrowser(entry.path));
+          row.append(icon, nameEl);
+        } else {
+          icon.textContent = "·";
+          const fmt = document.createElement("span");
+          fmt.className = "track-format";
+          fmt.textContent = entry.format;
+          nameEl.textContent = entry.name;
+
+          if (trackIDs.has(entry.id)) {
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "remove-file-btn";
+            removeBtn.textContent = "Remove";
+            removeBtn.addEventListener("click", () => removeTrackFromSession(entry.id));
+            row.append(icon, fmt, nameEl, removeBtn);
+          } else {
+            const addBtn = document.createElement("button");
+            addBtn.className = "add-file-btn";
+            addBtn.textContent = "Add";
+            addBtn.addEventListener("click", () => addBrowsedTrack(entry.path, addBtn));
+            row.append(icon, fmt, nameEl, addBtn);
+          }
+        }
+        return row;
+      }));
+    }
+
+    async function addBrowsedTrack(path, btn) {
+      btn.disabled = true;
+      btn.textContent = "…";
+      try {
+        const res = await fetch("/api/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path }),
+        });
+        if (!res.ok) throw new Error("add track failed: " + res.status);
+        const track = await res.json();
+
+        insertTrackInOrder(track);
+        loadedTracks.set(track.id, await browser.loadTrack(track));
+
+        renderTrackList(sessionData);
+        if (lastBrowseData) renderBrowserEntries(lastBrowseData);
+
+        const status = document.getElementById("status");
+        status.textContent = `Added "${track.name}" · ${loadedTracks.size} of ${sessionData.tracks.length} track(s).`;
+        status.classList.remove("error");
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Add";
+        const status = document.getElementById("status");
+        status.textContent = err.message;
+        status.classList.add("error");
+      }
+    }
+
+    function removeTrackFromSession(trackId) {
+      const idx = sessionData.tracks.findIndex(t => t.id === trackId);
+      if (idx !== -1) sessionData.tracks.splice(idx, 1);
+
+      const igvTrack = loadedTracks.get(trackId);
+      if (igvTrack && browser) {
+        browser.removeTrack(igvTrack);
+        loadedTracks.delete(trackId);
+      }
+
+      renderTrackList(sessionData);
+      if (lastBrowseData) renderBrowserEntries(lastBrowseData);
+
+      const status = document.getElementById("status");
+      status.textContent = `Removed · ${loadedTracks.size} of ${sessionData.tracks.length} track(s).`;
+      status.classList.remove("error");
+    }
+
     async function boot() {
       const status = document.getElementById("status");
       try {
-        menuCopy.textContent = `Session at ${window.location.origin}`;
         const res = await fetch("/api/session");
         if (!res.ok) throw new Error("session request failed: " + res.status);
         sessionData = await res.json();
+        menuCopy.textContent = sessionData.hostname + ':' + sessionData.cwd;
 
         renderTrackList(sessionData);
         document.getElementById("enable-all") .addEventListener("click", () => setAllTracks(true));
@@ -587,6 +876,11 @@
         backdrop.addEventListener("click", () => setMenuOpen(false));
         menuButton.addEventListener("click", () =>
           setMenuOpen(!panelOverlay.classList.contains("open")));
+
+        document.getElementById("browse-btn").addEventListener("click", () => {
+          const inBrowser = document.getElementById("browser-view").style.display === "flex";
+          setPanelView(inBrowser ? "tracks" : "browser");
+        });
 
         status.textContent = `Launched · ${sessionData.tracks.length} track(s) · ${sessionData.genome}`;
         await createBrowser(sessionData);
