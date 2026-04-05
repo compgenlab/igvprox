@@ -9,12 +9,12 @@ igvprox is a Go service that serves genomics files (BAM, CRAM, VCF, BigWig, etc.
 ## Build Commands
 
 ```bash
-make build              # Build to bin/igvprox
+make build              # Build all platforms (darwin_arm64, linux_amd64, linux_arm64)
 make test               # Run tests (go test ./...)
 make fmt                # Format code (gofmt)
 make clean              # Remove bin/
-make build-linux-amd64  # Cross-compile for Linux AMD64
-make build-linux-arm64  # Cross-compile for Linux ARM64
+make bin/igvprox.linux_amd64   # Cross-compile for Linux AMD64
+make bin/igvprox.linux_arm64   # Cross-compile for Linux ARM64
 ```
 
 Builds use CGO_ENABLED=0 for static binaries.

@@ -6,19 +6,17 @@ PKG := ./cmd/igvprox
 
 all: build
 
-build:
-	mkdir -p $(BIN_DIR)
-	go build -o $(BIN_DIR)/$(BINARY) $(PKG)
+build: $(BIN_DIR)/$(BINARY).darwin_arm64 $(BIN_DIR)/$(BINARY).linux_amd64 $(BIN_DIR)/$(BINARY).linux_arm64
 
-$(BIN_DIR)/$(BINARY)-darwin-arm64:
+$(BIN_DIR)/$(BINARY).darwin_arm64:
 	mkdir -p $(BIN_DIR)
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -o $@ $(PKG)
 
-$(BIN_DIR)/$(BINARY)-linux-amd64:
+$(BIN_DIR)/$(BINARY).linux_amd64:
 	mkdir -p $(BIN_DIR)
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o $@ $(PKG)
 
-$(BIN_DIR)/$(BINARY)-linux-arm64:
+$(BIN_DIR)/$(BINARY).linux_arm64:
 	mkdir -p $(BIN_DIR)
 	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o $@ $(PKG)
 
